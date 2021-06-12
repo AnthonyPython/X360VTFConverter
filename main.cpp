@@ -1,5 +1,7 @@
 #include <iostream>
-//#include <byteswap.h>
+#if not defined (_WIN32)
+#include <byteswap.h>
+#endif
 #include <stdint.h>
 
 enum ImageFormat 
@@ -272,7 +274,8 @@ float byteswap_float(float value)
 	return *(float *)&swapped;
 }
 
-int byteswap_int(int value)
+#if defined (_WIN32)
+int bswap_32(int value)
 {
 	int swapped = ((value>>24)&0xff) | // move byte 3 to byte 0
                     ((value<<8)&0xff0000) | // move byte 1 to byte 2
@@ -281,12 +284,14 @@ int byteswap_int(int value)
 	
 	return swapped;
 }
+#endif
 
+#if defined (_WIN32)
 uint16_t bswap_16(uint16_t value)
 {
 	return (value >> 8) |(value << 8);
 }
-
+#endif
 
 int main(int argc, char **argv) 
 {
@@ -309,11 +314,11 @@ int main(int argc, char **argv)
 	
 	VTFFileHeaderX360_t *pHdr = (VTFFileHeaderX360_t *)pBuffer;
 	
-	pHdr->version[0] = byteswap_int(pHdr->version[0]);
-	pHdr->version[1] = byteswap_int(pHdr->version[1]);
-	pHdr->headerSize = byteswap_int(pHdr->headerSize);
+	pHdr->version[0] = bswap_32(pHdr->version[0]);
+	pHdr->version[1] = bswap_32(pHdr->version[1]);
+	pHdr->headerSize = bswap_32(pHdr->headerSize);
 	
-	pHdr->flags = byteswap_int(pHdr->flags);
+	pHdr->flags = bswap_32(pHdr->flags);
 	pHdr->width = bswap_16(pHdr->width);
 	pHdr->height = bswap_16(pHdr->height);
 	pHdr->depth = bswap_16(pHdr->depth);
@@ -325,8 +330,8 @@ int main(int argc, char **argv)
 	pHdr->reflectivity.z = byteswap_float(pHdr->reflectivity.z);
 	
 	pHdr->bumpScale = byteswap_float(pHdr->bumpScale);
-	pHdr->imageFormat = (ImageFormat)byteswap_int(pHdr->imageFormat);
-	pHdr->compressedSize = byteswap_int(pHdr->compressedSize);
+	pHdr->imageFormat = (ImageFormat)bswap_32(pHdr->imageFormat);
+	pHdr->compressedSize = bswap_32(pHdr->compressedSize);
 	
 	if (pHdr->version[0] == VTF_X360_MAJOR_VERSION && pHdr->version[1] == VTF_X360_MINOR_VERSION)
 	{
@@ -398,7 +403,7 @@ int main(int argc, char **argv)
 		for (int i = 0; i < pHdr->numResources; i++)
 		{
 			ResourceEntryInfo *pResourceEntryInfo = (ResourceEntryInfo *)(pBuffer + sizeof(VTFFileHeaderX360_t) + (sizeof(ResourceEntryInfo) * i));
-			pResourceEntryInfo->resData = byteswap_int(pResourceEntryInfo->resData);
+			pResourceEntryInfo->resData = bswap_32(pResourceEntryInfo->resData);
 		}
 		
 		for (int i = 0; i < pHdr->numResources; i++)
